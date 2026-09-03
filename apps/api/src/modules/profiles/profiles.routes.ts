@@ -37,7 +37,7 @@ const upload = multer({
   },
 });
 
-export const profileRouter = Router();
+export const profileRouter: Router = Router();
 
 // ─── POST / — Create profile ──────────────────────────────────
 async function handleCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -57,7 +57,7 @@ async function handleCreate(req: Request, res: Response, next: NextFunction): Pr
 async function handleList(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const result = await profileService.listProfiles(
-      req.query as Parameters<typeof profileService.listProfiles>[0],
+      req.query as unknown as Parameters<typeof profileService.listProfiles>[0],
       req.user!,
     );
     sendSuccess(res, result.items, 200, result.meta);

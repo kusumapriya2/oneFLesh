@@ -3,7 +3,6 @@
 // ============================================================
 
 import 'dotenv/config';
-import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -17,6 +16,7 @@ import { getJwtKeys } from './config/jwt.js';
 import { initSocket } from './socket/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import express, { type Express } from 'express';
 
 // ─── Route imports ─────────────────────────────────────────────
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -32,7 +32,7 @@ import { uploadRouter } from './modules/uploads/uploads.routes.js';
 import { scheduleHardDeleteJob } from './jobs/hardDeleteProfiles.js';
 
 // ─── App setup ─────────────────────────────────────────────────
-const app = express();
+const app: Express = express();
 const httpServer = createServer(app);
 
 // ─── Security headers ──────────────────────────────────────────

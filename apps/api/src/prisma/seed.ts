@@ -397,7 +397,7 @@ async function main() {
   });
 
   // Profile 4: Ruth Thomas — 22, Bangalore, KA, Reformed Baptist, School Teacher, GROOM, 7 yrs, 4 endorsements
-  const ruthThomas = await prisma.profile.upsert({
+  await prisma.profile.upsert({
     where: { id: 'profile-ruth-thomas-004' },
     update: {},
     create: {
@@ -445,7 +445,7 @@ async function main() {
   });
 
   // Profile 5: Joel Philip — 27, Kochi, KL, Grace Reformed Kochi, Medical Doctor, BRIDE, 9 yrs, 5 endorsements
-  const joelPhilip = await prisma.profile.upsert({
+  await prisma.profile.upsert({
     where: { id: 'profile-joel-philip-005' },
     update: {},
     create: {
@@ -543,7 +543,7 @@ async function main() {
   // ─── 5. Vendors ───────────────────────────────────────────────
   console.log('  Creating vendors...');
 
-  const vendor1 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-grace-bridal-001' },
     update: {},
     create: {
@@ -568,7 +568,7 @@ async function main() {
     },
   });
 
-  const vendor2 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-heavenly-bakes-002' },
     update: {},
     create: {
@@ -593,7 +593,7 @@ async function main() {
     },
   });
 
-  const vendor3 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-covenant-frames-003' },
     update: {},
     create: {
@@ -618,7 +618,7 @@ async function main() {
     },
   });
 
-  const vendor4 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-philips-feast-004' },
     update: {},
     create: {
@@ -643,7 +643,7 @@ async function main() {
     },
   });
 
-  const vendor5 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-blessed-wheels-005' },
     update: {},
     create: {
@@ -668,7 +668,7 @@ async function main() {
     },
   });
 
-  const vendor6 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-eden-flowers-006' },
     update: {},
     create: {
@@ -693,7 +693,7 @@ async function main() {
     },
   });
 
-  const vendor7 = await prisma.vendor.upsert({
+  await prisma.vendor.upsert({
     where: { id: 'vendor-zion-valley-007' },
     update: {},
     create: {

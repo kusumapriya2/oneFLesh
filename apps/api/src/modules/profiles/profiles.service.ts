@@ -20,7 +20,7 @@ import type {
   PaginationMeta,
 } from '@oneflesh/shared';
 import { UserRole } from '@oneflesh/shared';
-import type { Profile, ShortlistedProfile } from '@prisma/client';
+import type { Profile, ShortlistedProfile, Prisma } from '@prisma/client';
 
 // ─── Types ────────────────────────────────────────────────────
 interface ProfileWithRelations extends Profile {
@@ -84,7 +84,7 @@ export async function listProfiles(
   const isPastor = requestingUser.role === UserRole.PASTOR;
 
   // ── Base constraints (always applied) ─────────────────────
-  const andClauses: object[] = [{ deletedAt: null }];
+  const andClauses: Prisma.ProfileWhereInput[] = [{ deletedAt: null }];
 
   // ── Status / visibility ────────────────────────────────────
   if (!isAdmin) {
@@ -125,7 +125,7 @@ export async function listProfiles(
   }
 
   // ── Denomination filter via church relation ────────────────
-  const churchWhere = denomination
+  const churchWhere: Prisma.ChurchWhereInput | undefined = denomination
     ? { denomination: { contains: denomination, mode: 'insensitive' } }
     : undefined;
 

@@ -3,9 +3,12 @@
 // ============================================================
 
 import rateLimit from 'express-rate-limit';
-import { RedisStore } from 'rate-limit-redis';
+import { RedisStore, type RedisReply } from 'rate-limit-redis';
 import { redis, RedisKeys } from '../config/redis.js';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+
+const sendRedisCommand = (...args: string[]): Promise<RedisReply> =>
+  redis.call(args[0]!, ...args.slice(1)) as Promise<RedisReply>;
 
 const rateLimitResponse = (_req: Request, res: Response) => {
   res.status(429).json({
@@ -25,7 +28,7 @@ export const generalLimiter = rateLimit({
   legacyHeaders: false,
   handler: rateLimitResponse,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: sendRedisCommand,
     prefix: 'rl:general:',
   }),
 });
@@ -38,7 +41,7 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   handler: rateLimitResponse,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: sendRedisCommand,
     prefix: 'rl:auth:',
   }),
 });
@@ -51,7 +54,7 @@ export const passwordResetLimiter = rateLimit({
   legacyHeaders: false,
   handler: rateLimitResponse,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: sendRedisCommand,
     prefix: 'rl:reset:',
   }),
 });
@@ -60,7 +63,7 @@ export const passwordResetLimiter = rateLimit({
 export async function aiRateLimiter(
   req: Request,
   res: Response,
-  next: Parameters<typeof next>[0],
+  next: NextFunction,
 ): Promise<void> {
   if (!req.user) {
     next();
@@ -98,7 +101,7 @@ export const uploadLimiter = rateLimit({
   legacyHeaders: false,
   handler: rateLimitResponse,
   store: new RedisStore({
-    sendCommand: (...args: string[]) => redis.call(...args),
+    sendCommand: sendRedisCommand,
     prefix: 'rl:upload:',
   }),
 });

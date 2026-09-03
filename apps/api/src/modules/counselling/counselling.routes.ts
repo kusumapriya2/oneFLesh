@@ -16,7 +16,7 @@ import {
 } from '@oneflesh/shared';
 import type { UserRole } from '@oneflesh/shared';
 
-export const counsellingRouter = Router();
+export const counsellingRouter: Router = Router();
 
 // ─── POST / — Register couple (creates 6 sessions) ───────────
 async function handleRegisterCouple(req: Request, res: Response, next: NextFunction): Promise<void> {

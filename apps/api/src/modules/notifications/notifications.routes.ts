@@ -9,7 +9,7 @@ import { authenticate } from '../../middleware/authenticate.js';
 import { sendSuccess, sendNoContent, paginate } from '../../utils/response.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
-export const notificationRouter = Router();
+export const notificationRouter: Router = Router();
 
 // ─── GET / — Paginated list of user's notifications ───────────
 async function handleList(req: Request, res: Response, next: NextFunction): Promise<void> {

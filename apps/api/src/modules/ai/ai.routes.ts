@@ -2,8 +2,7 @@
 // OneFlesh — AI Routes
 // ============================================================
 
-import { Router } from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import * as aiService from './ai.service.js';
 import { authenticate } from '../../middleware/authenticate.js';
 import { requirePastor } from '../../middleware/authorize.js';
@@ -19,7 +18,8 @@ import {
   COUNSELLING_SESSIONS,
 } from '@oneflesh/shared';
 
-export const aiRouter = Router();
+// Explicit type annotation fixes TS2742
+export const aiRouter: Router = Router();
 
 // ─── POST /match — Match scoring ─────────────────────────────
 async function handleMatch(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -49,7 +49,6 @@ async function handleCounsellingQuestions(req: Request, res: Response, next: Nex
       allianceId?: string;
     };
 
-    // Derive topic and scripture from canonical session definitions
     const sessionDef = COUNSELLING_SESSIONS.find((s) => s.session === sessionNumber);
 
     if (!sessionDef) {

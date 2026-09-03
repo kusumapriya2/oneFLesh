@@ -1,8 +1,8 @@
-// ============================================================
+﻿// ============================================================
 // OneFlesh — Environment Validation
 // ============================================================
 
-import { cleanEnv, str, num, bool } from 'envalid';
+import { cleanEnv, str, num } from 'envalid';
 
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({ choices: ['development', 'test', 'production'], default: 'development' }),

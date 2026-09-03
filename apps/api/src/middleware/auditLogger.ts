@@ -25,7 +25,7 @@ export async function writeAuditLog(
         action: options.action,
         entityType: options.entityType ?? null,
         entityId: options.entityId ?? null,
-        metadata: options.metadata ?? {},
+        metadata: JSON.stringify(options.metadata ?? {}),
         ipAddress: req.ip ?? null,
         userAgent: req.headers['user-agent'] ?? null,
       },

@@ -2,7 +2,7 @@
 // OneFlesh — Auth Routes
 // ============================================================
 
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import {
   handleRegister,
   handleLogin,
@@ -28,24 +28,78 @@ import {
   ResetPasswordSchema,
 } from '@oneflesh/shared';
 
-export const authRouter = Router();
+// Explicit type annotation fixes TS2742
+export const authRouter: Router = Router();
 
 // Public routes
-authRouter.post('/register', authLimiter, validateBody(RegisterSchema), handleRegister);
-authRouter.post('/login', authLimiter, validateBody(LoginSchema), handleLogin);
-authRouter.post('/mfa/verify', authLimiter, validateBody(MfaVerifySchema), handleMfaVerify);
-authRouter.post('/refresh', authLimiter, handleRefresh); // H-08: rate-limit token refresh
+authRouter.post(
+  '/register',
+  authLimiter,
+  validateBody(RegisterSchema),
+  (req: Request, res: Response, next: NextFunction) => handleRegister(req, res, next),
+);
+
+authRouter.post(
+  '/login',
+  authLimiter,
+  validateBody(LoginSchema),
+  (req: Request, res: Response, next: NextFunction) => handleLogin(req, res, next),
+);
+
+authRouter.post(
+  '/mfa/verify',
+  authLimiter,
+  validateBody(MfaVerifySchema),
+  (req: Request, res: Response, next: NextFunction) => handleMfaVerify(req, res, next),
+);
+
+authRouter.post(
+  '/refresh',
+  authLimiter, // H-08: rate-limit token refresh
+  (req: Request, res: Response, next: NextFunction) => handleRefresh(req, res, next),
+);
+
 authRouter.post(
   '/forgot-password',
   passwordResetLimiter,
   validateBody(ForgotPasswordSchema),
-  handleForgotPassword,
+  (req: Request, res: Response, next: NextFunction) => handleForgotPassword(req, res, next),
 );
-authRouter.post('/reset-password', validateBody(ResetPasswordSchema), handleResetPassword);
+
+authRouter.post(
+  '/reset-password',
+  validateBody(ResetPasswordSchema),
+  (req: Request, res: Response, next: NextFunction) => handleResetPassword(req, res, next),
+);
 
 // Protected routes
-authRouter.post('/mfa/setup', authenticate, handleMfaSetup);
-authRouter.post('/mfa/enable', authenticate, validateBody(MfaEnableSchema), handleMfaEnable);
-authRouter.post('/logout', authenticate, handleLogout);
-authRouter.get('/sessions', authenticate, handleListSessions);
-authRouter.delete('/sessions/:id', authenticate, handleRevokeSession);
+authRouter.post(
+  '/mfa/setup',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => handleMfaSetup(req, res, next),
+);
+
+authRouter.post(
+  '/mfa/enable',
+  authenticate,
+  validateBody(MfaEnableSchema),
+  (req: Request, res: Response, next: NextFunction) => handleMfaEnable(req, res, next),
+);
+
+authRouter.post(
+  '/logout',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => handleLogout(req, res, next),
+);
+
+authRouter.get(
+  '/sessions',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => handleListSessions(req, res, next),
+);
+
+authRouter.delete(
+  '/sessions/:id',
+  authenticate,
+  (req: Request, res: Response, next: NextFunction) => handleRevokeSession(req, res, next),
+);

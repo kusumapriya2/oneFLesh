@@ -9,7 +9,7 @@ import { authenticate } from '../../middleware/authenticate.js';
 import { requirePastor } from '../../middleware/authorize.js';
 import { churchGuard } from '../../middleware/churchGuard.js';
 import { validateBody } from '../../middleware/validate.js';
-import { sendSuccess, sendCreated, sendNoContent } from '../../utils/response.js';
+import { sendSuccess, sendCreated } from '../../utils/response.js';
 import {
   CreateAllianceSchema,
   AdvanceAllianceSchema,
@@ -17,7 +17,7 @@ import {
 } from '@oneflesh/shared';
 import type { UserRole } from '@oneflesh/shared';
 
-export const allianceRouter = Router();
+export const allianceRouter: Router = Router();
 
 // ─── POST / — Create alliance ─────────────────────────────────
 async function handleCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -37,10 +37,11 @@ async function handleList(req: Request, res: Response, next: NextFunction): Prom
     const status = req.query['status'] as string | undefined;
     const stage = req.query['stage'] ? Number(req.query['stage']) : undefined;
 
+    const filters = { page, limit, ...(status !== undefined && { status }), ...(stage !== undefined && { stage }) };
     const result = await allianceService.listAlliances(
       req.user!.sub,
       req.user!.role as UserRole,
-      { status, stage, page, limit },
+      filters,
     );
 
     sendSuccess(res, result.items, 200, result.meta);

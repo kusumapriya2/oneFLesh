@@ -105,8 +105,8 @@ export async function registerChurch(data: RegisterInput): Promise<{ userId: str
         pastorName: data.pastorName,
         pastorEmail: data.email,
         pastorPhone: data.pastorPhone,
-        congregationSize: data.congregationSize,
-        yearEstablished: data.yearEstablished,
+        ...(data.congregationSize !== undefined && { congregationSize: data.congregationSize }),
+        ...(data.yearEstablished !== undefined && { yearEstablished: data.yearEstablished }),
         doctrinalFlags: data.doctrinalFlags,
         status: 'PENDING',
       },
@@ -138,7 +138,7 @@ export async function login(data: LoginInput, ip: string): Promise<{
 }> {
   const user = await prisma.user.findUnique({
     where: { email: data.email },
-    include: { church: { select: { status: true } } },
+    include: { church: { select: { status: true, pastorPhone: true } } },
   });
 
   if (!user) {
@@ -167,7 +167,7 @@ export async function login(data: LoginInput, ip: string): Promise<{
         data: { failedLoginAttempts: attempts, lockedUntil },
       });
       // Send SMS if phone available
-      sendSMS(user.church?.['pastorPhone'] ?? '', SMSTemplates.accountLocked());
+      sendSMS(user.church?.pastorPhone ?? '', SMSTemplates.accountLocked());
       throw new AppError(423, 'ACCOUNT_LOCKED', 'Account locked after too many failed attempts');
     }
 

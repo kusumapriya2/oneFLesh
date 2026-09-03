@@ -77,7 +77,6 @@ export async function notifyNewInterest(allianceId: string): Promise<void> {
     }
 
     const { profile1, profile2 } = alliance;
-    const receivingChurchName = profile2.church?.name ?? 'A church';
     const expressedByChurchName = profile1.church?.name ?? 'A church';
 
     // In-app

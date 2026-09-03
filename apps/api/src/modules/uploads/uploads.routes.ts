@@ -12,7 +12,7 @@ import { uploadLimiter } from '../../middleware/rateLimiter.js';
 import { sendCreated } from '../../utils/response.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
-export const uploadRouter = Router();
+export const uploadRouter: Router = Router();
 
 // ─── Multer configuration ─────────────────────────────────────
 // Memory storage, 5MB max, JPEG/PNG/WebP only

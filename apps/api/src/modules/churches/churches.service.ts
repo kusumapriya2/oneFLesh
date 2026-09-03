@@ -5,7 +5,7 @@
 import { prisma } from '../../config/database.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { logger } from '../../config/logger.js';
-import { sendEmail, EmailTemplates } from '../../utils/email.js';
+import { sendEmail } from '../../utils/email.js';
 import { paginate } from '../../utils/response.js';
 import { notifyChurchApproved } from '../notifications/notifications.service.js';
 import type { CreateChurchInput, UpdateChurchInput } from '@oneflesh/shared';

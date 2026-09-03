@@ -16,7 +16,7 @@ import {
 } from '@oneflesh/shared';
 import type { UserRole } from '@oneflesh/shared';
 
-export const vendorRouter = Router();
+export const vendorRouter: Router = Router();
 
 // ─── POST / — Create vendor ───────────────────────────────────
 async function handleCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -31,7 +31,9 @@ async function handleCreate(req: Request, res: Response, next: NextFunction): Pr
 // ─── GET / — List vendors ─────────────────────────────────────
 async function handleList(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await vendorsService.listVendors(req.query as Parameters<typeof vendorsService.listVendors>[0]);
+    const result = await vendorsService.listVendors(
+      req.query as unknown as Parameters<typeof vendorsService.listVendors>[0]
+    );
     sendSuccess(res, result.items, 200, result.meta);
   } catch (err) {
     next(err);

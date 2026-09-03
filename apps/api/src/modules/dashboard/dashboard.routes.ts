@@ -11,7 +11,7 @@ import { churchGuard } from '../../middleware/churchGuard.js';
 import { sendSuccess } from '../../utils/response.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
-export const dashboardRouter = Router();
+export const dashboardRouter: Router = Router();
 
 // ─── GET /pastor — Pastor dashboard ──────────────────────────
 async function handlePastorDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -53,7 +53,7 @@ async function handlePublicStats(_req: Request, res: Response, next: NextFunctio
 }
 
 // ─── GET /admin — Admin dashboard ────────────────────────────
-async function handleAdminDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
+async function handleAdminDashboard(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const data = await dashboardService.getAdminDashboard();
     sendSuccess(res, data);

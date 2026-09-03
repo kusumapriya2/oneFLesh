@@ -19,7 +19,7 @@ import {
 } from '@oneflesh/shared';
 import type { UserRole } from '@oneflesh/shared';
 
-export const churchRouter = Router();
+export const churchRouter: Router = Router();
 
 // ─── POST / — Create a church ─────────────────────────────────
 async function handleCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -38,7 +38,8 @@ async function handleList(req: Request, res: Response, next: NextFunction): Prom
     const limit = Number(req.query['limit'] ?? 20);
     const status = req.query['status'] as string | undefined;
 
-    const result = await churchService.listChurches({ status, page, limit });
+    const filters = { page, limit, ...(status !== undefined && { status }) };
+    const result = await churchService.listChurches(filters);
     sendSuccess(res, result.items, 200, result.meta);
   } catch (err) {
     next(err);

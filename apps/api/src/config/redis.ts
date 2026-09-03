@@ -2,26 +2,27 @@
 // OneFlesh — Redis Client (ioredis)
 // ============================================================
 
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { env } from './env.js';
 import { logger } from './logger.js';
 
+// Explicitly type parameters to avoid TS errors
 export const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: 3,
   enableReadyCheck: true,
-  retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
+  retryStrategy(times: number): number {
+    return Math.min(times * 50, 2000);
   },
-  reconnectOnError(err) {
+  reconnectOnError(err: Error): boolean {
+    // Example: reconnect on READONLY errors
     const targetError = 'READONLY';
-    if (err.message.includes(targetError)) return true;
-    return false;
+    return err.message.includes(targetError);
   },
 });
 
+// Event handlers with explicit types
 redis.on('connect', () => logger.info('✅ Redis connected'));
-redis.on('error', (err) => logger.error('Redis error:', err));
+redis.on('error', (err: Error) => logger.error('Redis error:', err));
 redis.on('reconnecting', () => logger.warn('Redis reconnecting...'));
 
 // ─── Key helpers ──────────────────────────────────────────────
@@ -43,9 +44,9 @@ export const RedisKeys = {
 // ─── TTL constants (seconds) ──────────────────────────────────
 export const RedisTTL = {
   REFRESH_TOKEN: 7 * 24 * 60 * 60,   // 7 days
-  MFA_TEMP: 5 * 60,                   // 5 minutes
-  PASSWORD_RESET: 15 * 60,            // 15 minutes
-  TOKEN_BLACKLIST: 24 * 60 * 60,      // 24 hours
-  SEARCH_CACHE: 5 * 60,               // 5 minutes
-  AI_RESPONSE_CACHE: 60 * 60,         // 1 hour
+  MFA_TEMP: 5 * 60,                  // 5 minutes
+  PASSWORD_RESET: 15 * 60,           // 15 minutes
+  TOKEN_BLACKLIST: 24 * 60 * 60,     // 24 hours
+  SEARCH_CACHE: 5 * 60,              // 5 minutes
+  AI_RESPONSE_CACHE: 60 * 60,        // 1 hour
 };
