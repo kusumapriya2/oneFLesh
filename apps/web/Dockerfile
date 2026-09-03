@@ -7,11 +7,13 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm ci --workspace=apps/web --workspace=packages/shared
+RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: build ────────────────────────────────────────
 FROM node:20-alpine AS build
@@ -27,8 +29,10 @@ COPY apps/web/ ./apps/web/
 COPY tsconfig.json ./
 
 # Build shared first (needed as workspace dep), then Vite build
-RUN npm run build -w packages/shared && \
-    npm run build -w apps/web
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+RUN pnpm run build -w packages/shared && \
+    pnpm run build -w apps/web
 
 # ── Stage 3: serve with Nginx ─────────────────────────────
 FROM nginx:1.27-alpine AS production

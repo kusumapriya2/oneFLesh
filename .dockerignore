@@ -61,5 +61,3 @@ tmp
 temp
 .tmp
 
-# Prisma (only schema is needed, migrations applied separately)
-apps/api/src/prisma/migrations

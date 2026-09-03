@@ -7,12 +7,14 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
 # Copy workspace manifests first for layer caching
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
 
-RUN npm ci --workspace=apps/api --workspace=packages/shared
+RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: build ────────────────────────────────────────
 FROM node:20-alpine AS build
@@ -27,40 +29,48 @@ COPY packages/shared/ ./packages/shared/
 COPY apps/api/ ./apps/api/
 COPY tsconfig.json ./
 
-# Build shared package first, then API
-RUN npm run build -w packages/shared && \
-    npm run build -w apps/api
-
-# Generate Prisma client
+# Generate Prisma client before TypeScript compilation.
 WORKDIR /app/apps/api
-RUN npx prisma generate
+RUN DATABASE_URL=postgresql://localhost:5432/build \
+    DIRECT_URL=postgresql://localhost:5432/build \
+    pnpm exec prisma generate
+
+# Build shared package first, then API
+WORKDIR /app
+RUN pnpm run build -w packages/shared && \
+    pnpm run build -w apps/api
 
 # ── Stage 3: production ───────────────────────────────────
 FROM node:20-alpine AS production
 
 RUN apk add --no-cache dumb-init
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 # Only production deps
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/api/package.json ./apps/api/
+COPY apps/api/src/prisma/schema.prisma ./apps/api/src/prisma/schema.prisma
+COPY apps/api/src/prisma/migrations ./apps/api/src/prisma/migrations
 
-RUN npm ci --workspace=apps/api --workspace=packages/shared --omit=dev && \
-    npm cache clean --force
+RUN DATABASE_URL=postgresql://localhost:5432/build \
+    DIRECT_URL=postgresql://localhost:5432/build \
+    pnpm install --frozen-lockfile --prod && \
+    pnpm store prune
 
 # Copy built artefacts
 COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/node_modules/.prisma ./apps/api/node_modules/.prisma
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
-COPY apps/api/src/prisma/schema.prisma ./apps/api/src/prisma/schema.prisma
 
 # Non-root user
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --ingroup nodejs api
+    adduser --system --uid 1001 --ingroup nodejs api && \
+    mkdir -p /app/apps/api/logs && \
+    chown -R api:nodejs /app/apps/api
 USER api
 
 WORKDIR /app/apps/api

@@ -30,6 +30,9 @@ export const logger = winston.createLogger({
   level: process.env['LOG_LEVEL'] ?? 'info',
   format: logFormat,
   transports: [
+    new winston.transports.Console({
+      format: consoleFormat,
+    }),
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
@@ -47,10 +50,3 @@ export const logger = winston.createLogger({
   ],
 });
 
-if (process.env['NODE_ENV'] !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: consoleFormat,
-    }),
-  );
-}
