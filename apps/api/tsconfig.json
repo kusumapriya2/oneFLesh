@@ -7,9 +7,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@oneflesh/shared": ["../../packages/shared/src/index.ts"]
-    },
     "types": ["node", "jest"]
   },
   "include": ["src/**/*"],

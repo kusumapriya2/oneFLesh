@@ -7,7 +7,7 @@ export default defineConfig({
   outExtension({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' };
   },
-  dts: false,   // API + Web resolve @oneflesh/shared to source via tsconfig paths; no .d.ts needed in-monorepo
+  dts: true,   // API + Web resolve @oneflesh/shared to source via tsconfig paths; no .d.ts needed in-monorepo
   clean: true,
   sourcemap: true,
   tsconfig: 'tsconfig.json',

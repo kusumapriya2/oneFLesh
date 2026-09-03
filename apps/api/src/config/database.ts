@@ -5,7 +5,9 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from './logger.js';
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
 
 export const prisma =
   globalForPrisma.prisma ??
@@ -22,15 +24,21 @@ if (process.env['NODE_ENV'] !== 'production') {
 }
 
 // Log slow queries in development
-prisma.$on('query', (e) => {
-  if (e.duration > 200) {
-    logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
-  }
-});
+prisma.$on(
+  'query' as never,
+  (e: { duration: number; query: string }) => {
+    if (e.duration > 200) {
+      logger.warn(`Slow query (${e.duration}ms): ${e.query}`);
+    }
+  },
+);
 
-prisma.$on('error', (e) => {
-  logger.error('Prisma error:', e);
-});
+prisma.$on(
+  'error' as never,
+  (e: unknown) => {
+    logger.error('Prisma error:', e);
+  },
+);
 
 export async function connectDatabase(): Promise<void> {
   try {
