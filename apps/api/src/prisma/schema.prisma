@@ -1,0 +1,403 @@
+// ============================================================
+// OneFlesh — Prisma Schema
+// Reformed Church Matrimonial Platform
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") 
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  CHURCH_ADMIN
+  PASTOR
+  VENDOR
+  READ_ONLY
+}
+
+enum ChurchStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum ProfileStatus {
+  PENDING
+  APPROVED
+  PAUSED
+  DELETED
+}
+
+enum SeekingType {
+  BRIDE
+  GROOM
+}
+
+enum AllianceStatus {
+  ACTIVE
+  COMPLETED
+  DISSOLVED
+}
+
+enum VendorCategory {
+  TAILORS
+  CAKES
+  PHOTOGRAPHY
+  CATERING
+  CARS
+  DECOR
+  VENUES
+  MUSIC
+  INVITATIONS
+  OTHER
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum SessionFormat {
+  IN_PERSON
+  VIDEO_CALL
+  PHONE_CALL
+}
+
+enum NotificationType {
+  // Alliance
+  INTEREST
+  ALLIANCE_UPDATE
+  ALLIANCE_DISSOLVED
+
+  // Profile
+  PROFILE_APPROVED
+  PROFILE_REJECTED
+
+  // Church
+  CHURCH_APPROVED
+  CHURCH_REJECTED
+
+  // Counselling
+  COUNSELLING_REMINDER
+  SESSION_SCHEDULED
+  SESSION_COMPLETED
+
+  // Vendor
+  VENDOR_CONTACT
+  VENDOR_APPROVED
+
+  // System
+  SYSTEM
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET
+  MFA_ENABLED
+  PROFILE_CREATE
+  PROFILE_UPDATE
+  PROFILE_DELETE
+  PROFILE_APPROVE
+  ALLIANCE_CREATE
+  ALLIANCE_ADVANCE
+  ALLIANCE_DISSOLVE
+  CHURCH_APPROVE
+  CHURCH_REJECT
+  VENDOR_VERIFY
+}
+
+enum AIFeature {
+  MATCH_SCORING
+  LETTER_DRAFTING
+  COUNSELLING_QUESTIONS
+  ALLIANCE_SUMMARY
+  CHAT
+}
+
+// ─── Models ───────────────────────────────────────────────────
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  role                 UserRole  @default(PASTOR)
+  churchId             String?
+  mfaEnabled           Boolean   @default(false)
+  mfaSecret            String?   // encrypted
+  mfaBackupCodes       String[]  // encrypted array
+  failedLoginAttempts  Int       @default(0)
+  lockedUntil          DateTime?
+  passwordChangedAt    DateTime?
+  lastLoginAt          DateTime?
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  church              Church?              @relation(fields: [churchId], references: [id])
+  profiles            Profile[]
+  shortlistedProfiles ShortlistedProfile[]
+  allianceNotes       AllianceNote[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  aiInteractions      AIInteraction[]
+
+  @@index([email])
+  @@index([churchId])
+  @@map("users")
+}
+
+model Church {
+  id               String       @id @default(cuid())
+  name             String
+  denomination     String
+  city             String
+  state            String
+  pastorName       String
+  pastorEmail      String       @unique
+  pastorPhone      String
+  congregationSize Int?
+  yearEstablished  Int?
+  doctrinalFlags   Json         // { affirmsScriptureAlone, affirmsChristAlone, affirmsFaithAlone, affirmsGraceAlone }
+  status           ChurchStatus @default(PENDING)
+  rejectionReason  String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  users     User[]
+  profiles  Profile[]
+  vendors   Vendor[]
+  alliances1 Alliance[] @relation("Church1Alliances")
+  alliances2 Alliance[] @relation("Church2Alliances")
+
+  @@index([status])
+  @@index([state])
+  @@map("churches")
+}
+
+model Profile {
+  id                   String        @id @default(cuid())
+  churchId             String
+  pastorId             String
+  fullName             String        // encrypted at rest via Prisma middleware
+  age                  Int
+  city                 String
+  state                String
+  education            String?
+  occupation           String?
+  seeking              SeekingType
+  testimony            String        // encrypted
+  ministryInvolvement  String?
+  pastorRecommendation String        // encrypted
+  endorsements         Json          // Endorsement[] — encrypted
+  photoUrl             String?
+  fatherName           String?       // encrypted
+  status               ProfileStatus @default(PENDING)
+  yearsInChurch        Int?
+  deletedAt            DateTime?
+  hardDeleteAt         DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  church  Church @relation(fields: [churchId], references: [id])
+  pastor  User   @relation(fields: [pastorId], references: [id])
+
+  shortlistedBy  ShortlistedProfile[]
+  alliances1     Alliance[]           @relation("Profile1Alliances")
+  alliances2     Alliance[]           @relation("Profile2Alliances")
+
+  @@index([churchId])
+  @@index([pastorId])
+  @@index([status])
+  @@index([seeking])
+  @@index([state])
+  @@index([age])
+  @@map("profiles")
+}
+
+model Alliance {
+  id              String         @id @default(cuid())
+  profile1Id      String
+  profile2Id      String
+  church1Id       String
+  church2Id       String
+  stage           Int            @default(1)  // 1-5
+  status          AllianceStatus @default(ACTIVE)
+  openedAt        DateTime       @default(now())
+  dissolvedAt     DateTime?
+  dissolvedReason String?        // kept null per BRD — no reason recorded
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  profile1  Profile @relation("Profile1Alliances", fields: [profile1Id], references: [id])
+  profile2  Profile @relation("Profile2Alliances", fields: [profile2Id], references: [id])
+  church1   Church  @relation("Church1Alliances", fields: [church1Id], references: [id])
+  church2   Church  @relation("Church2Alliances", fields: [church2Id], references: [id])
+
+  notes              AllianceNote[]
+  counsellingSessions CounsellingSession[]
+
+  @@index([profile1Id])
+  @@index([profile2Id])
+  @@index([status])
+  @@index([stage])
+  @@map("alliances")
+}
+
+model AllianceNote {
+  id         String   @id @default(cuid())
+  allianceId String
+  authorId   String
+  content    String
+  createdAt  DateTime @default(now())
+
+  alliance Alliance @relation(fields: [allianceId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id])
+
+  @@index([allianceId])
+  @@map("alliance_notes")
+}
+
+model CounsellingSession {
+  id             String        @id @default(cuid())
+  allianceId     String
+  groomName      String
+  brideName      String
+  groomChurch    String
+  brideChurch    String
+  counsellorName String
+  sessionNumber  Int           // 1-6
+  sessionDate    DateTime?
+  format         SessionFormat @default(IN_PERSON)
+  status         SessionStatus @default(SCHEDULED)
+  completedAt    DateTime?
+  notes          String?
+  createdAt      DateTime      @default(now())
+
+  alliance Alliance @relation(fields: [allianceId], references: [id])
+
+  @@index([allianceId])
+  @@index([status])
+  @@map("counselling_sessions")
+}
+
+model Vendor {
+  id           String         @id @default(cuid())
+  churchId     String?
+  ownerUserId  String?
+  businessName String
+  category     VendorCategory
+  location     String
+  city         String
+  state        String
+  description  String
+  priceFrom    String?
+  priceType    String?
+  photoUrl     String?
+  ownerName    String
+  phone        String
+  email        String
+  website      String?
+  verified     Boolean        @default(false)
+  featured     Boolean        @default(false)
+  status       VendorStatus   @default(PENDING)
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  church Church? @relation(fields: [churchId], references: [id])
+
+  @@index([category])
+  @@index([state])
+  @@index([verified])
+  @@index([featured])
+  @@index([status])
+  @@map("vendors")
+}
+
+model Notification {
+  id                String           @id @default(cuid())
+  userId            String
+  type              NotificationType
+  title             String
+  body              String
+  read              Boolean          @default(false)
+  relatedEntityType String?
+  relatedEntityId   String?
+  createdAt         DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model ShortlistedProfile {
+  id        String   @id @default(cuid())
+  pastorId  String
+  profileId String
+  createdAt DateTime @default(now())
+
+  pastor  User    @relation(fields: [pastorId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([pastorId, profileId])
+  @@index([pastorId])
+  @@map("shortlisted_profiles")
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String?
+  action      AuditAction
+  entityType  String?
+  entityId    String?
+  metadata    Json        @default("{}")
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AIInteraction {
+  id         String    @id @default(cuid())
+  userId     String
+  prompt     String
+  response   String
+  tokensUsed Int
+  feature    AIFeature
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([feature])
+  @@index([createdAt])
+  @@map("ai_interactions")
+}

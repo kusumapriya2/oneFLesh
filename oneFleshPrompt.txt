@@ -1,0 +1,614 @@
+You are a senior full-stack engineer and technical architect. I have two reference documents:
+
+1. A working HTML prototype file: reformed-matrimony-v2.html
+2. A Business Requirements Document: Covenant_Matrimony_BRD_SRS_v1.0.docx
+
+Your task is to build the complete end-to-end production application called "Yoke" — a Reformed church matrimonial platform for India — using ONLY Node.js-based technologies (no Python anywhere in the stack).
+
+---
+
+## REFERENCE MATERIALS
+
+Read both files thoroughly before writing any code:
+- The HTML prototype shows exact UI, screens, color scheme, typography, component structure, and all user flows
+- The BRD document contains all functional requirements, security specs, data models, user stories, acceptance criteria, and the full module list
+
+---
+
+## TECHNOLOGY STACK (Node.js only — no Python)
+
+### Backend
+- Runtime: Node.js 20 LTS
+- Framework: Express.js with TypeScript
+- ORM: Prisma with PostgreSQL
+- Auth: JWT (RS256) + bcrypt + speakeasy (TOTP MFA)
+- Validation: Zod on all request bodies
+- File uploads: Multer + AWS S3 SDK v3
+- Email: Nodemailer + AWS SES
+- SMS/OTP: Twilio Node SDK
+- AI: Anthropic Claude SDK (@anthropic-ai/sdk)
+- Cache: ioredis (Redis)
+- Rate limiting: express-rate-limit + rate-limit-redis
+- WebSockets: socket.io (real-time notifications)
+- Logging: Winston + Morgan
+- Testing: Jest + Supertest
+
+### Frontend
+- Framework: React 18 + TypeScript + Vite
+- Styling: Tailwind CSS — use EXACT colors from prototype:
+  --crimson-deep: #4a0a12
+  --crimson: #6b0f1a
+  --crimson-light: #8b1a2a
+  --gold: #c9a84c
+  --gold-light: #e2c97e
+  --cream: #faf6f0
+  --warm-white: #fff9f4
+  --rose-pale: #f5e8e8
+- Fonts: Cormorant Garamond (display) + Jost (body) from Google Fonts
+- State: Zustand + React Query (TanStack Query v5)
+- Routing: React Router v6
+- Forms: React Hook Form + Zod resolver
+- HTTP client: Axios with interceptors
+- UI components: Build custom — match prototype exactly, do not use any component library
+- Icons: Lucide React
+- Notifications: react-hot-toast
+- PDF generation: @react-pdf/renderer (counselling certificates)
+
+### Mobile (Phase 2 prep — scaffold only)
+- React Native + Expo SDK 51
+- Shared types package with web
+
+### Infrastructure / DevOps
+- Containerisation: Docker + Docker Compose (local dev)
+- Database migrations: Prisma migrate
+- Environment: dotenv + envalid for env validation
+- Process manager: PM2 (production)
+- Reverse proxy config: Nginx config file
+- CI/CD: GitHub Actions workflows
+
+---
+
+## PROJECT STRUCTURE
+
+Create this exact monorepo structure:
+
+yoke/
+├── apps/
+│   ├── api/                        # Express backend
+│   │   ├── src/
+│   │   │   ├── config/             # env, database, redis, aws, ai config
+│   │   │   ├── middleware/         # auth, rbac, rateLimit, upload, error, logging
+│   │   │   ├── modules/
+│   │   │   │   ├── auth/           # login, logout, refresh, mfa, password-reset
+│   │   │   │   ├── churches/       # registration, approval, verification
+│   │   │   │   ├── profiles/       # CRUD, search, shortlist, pause
+│   │   │   │   ├── alliances/      # create, stage-advance, dissolve, notes
+│   │   │   │   ├── counselling/    # register, sessions, completion, certificates
+│   │   │   │   ├── vendors/        # registration, verification, search, contact
+│   │   │   │   ├── notifications/  # in-app, email, SMS triggers
+│   │   │   │   ├── ai/             # match scoring, letter drafting, session prep
+│   │   │   │   ├── dashboard/      # pastor stats, admin analytics
+│   │   │   │   └── uploads/        # photo upload, S3 management
+│   │   │   ├── prisma/             # schema, migrations, seed
+│   │   │   ├── socket/             # socket.io event handlers
+│   │   │   ├── jobs/               # scheduled jobs (reminders, cleanup)
+│   │   │   ├── utils/              # helpers, formatters, validators
+│   │   │   └── server.ts           # entry point
+│   │   ├── tests/
+│   │   │   ├── unit/
+│   │   │   ├── integration/
+│   │   │   └── fixtures/
+│   │   ├── Dockerfile
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   │
+│   └── web/                        # React frontend
+│       ├── src/
+│       │   ├── assets/             # fonts, images, icons
+│       │   ├── components/
+│       │   │   ├── ui/             # Button, Input, Select, Modal, Toast, Badge, Tabs
+│       │   │   ├── layout/         # Header, Footer, Sidebar, PageWrapper
+│       │   │   ├── profiles/       # ProfileCard, ProfileModal, ProfileGrid, SearchBar
+│       │   │   ├── alliances/      # AlliancePipeline, AllianceCard, StageIndicator
+│       │   │   ├── vendors/        # VendorCard, VendorList, VendorCategoryGrid
+│       │   │   ├── counselling/    # ModuleCard, SessionTracker, CertificateDownload
+│       │   │   ├── dashboard/      # StatCard, NotificationFeed, ScheduleCard
+│       │   │   └── ai/             # AIPanel, ChatBox, MatchCard, QuickActions
+│       │   ├── pages/
+│       │   │   ├── Home/           # Landing page matching prototype hero + sections
+│       │   │   ├── Auth/           # Login, Register, ForgotPassword, MFASetup
+│       │   │   ├── Profiles/       # ProfileList, ProfileDetail, AddProfile
+│       │   │   ├── Alliances/      # AllianceList, AllianceDetail
+│       │   │   ├── Counselling/    # Programme page, BookSessions, SessionDetail
+│       │   │   ├── Vendors/        # VendorDirectory, VendorDetail, AddVendor
+│       │   │   ├── Dashboard/      # PastorDashboard, AdminDashboard
+│       │   │   └── Church/         # RegisterChurch, ChurchSettings
+│       │   ├── hooks/              # useAuth, useProfiles, useAlliances, useAI, useSocket
+│       │   ├── stores/             # Zustand: authStore, uiStore, notificationStore
+│       │   ├── services/           # axios API service modules per domain
+│       │   ├── types/              # TypeScript interfaces matching Prisma models
+│       │   ├── utils/              # formatters, validators, constants
+│       │   ├── styles/             # global CSS, Tailwind config with custom tokens
+│       │   └── main.tsx
+│       ├── public/
+│       ├── index.html
+│       ├── Dockerfile
+│       ├── package.json
+│       ├── tailwind.config.ts
+│       └── vite.config.ts
+│
+├── packages/
+│   └── shared/                     # Shared TypeScript types and Zod schemas
+│       ├── src/
+│       │   ├── types/              # User, Church, Profile, Alliance, Vendor, etc.
+│       │   ├── schemas/            # Zod validation schemas (used by both api and web)
+│       │   └── constants/          # Enums, status codes, config constants
+│       └── package.json
+│
+├── infrastructure/
+│   ├── docker-compose.yml          # postgres, redis, api, web, nginx
+│   ├── docker-compose.dev.yml      # hot reload dev setup
+│   ├── nginx/
+│   │   └── nginx.conf
+│   └── scripts/
+│       ├── setup.sh
+│       └── seed-dev.sh
+│
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                  # lint, typecheck, test on PR
+│       └── deploy.yml              # build and push Docker images on main
+│
+├── .env.example
+├── package.json                    # workspace root (npm workspaces)
+└── README.md
+
+---
+
+## PRISMA SCHEMA
+
+Build the complete schema with ALL these models and exact fields from the BRD:
+
+- User (id, email, passwordHash, role, churchId, mfaEnabled, mfaSecret, failedLoginAttempts, lockedUntil, lastLoginAt, createdAt, updatedAt)
+- Church (id, name, denomination, city, state, pastorName, pastorEmail, pastorPhone, congregationSize, yearEstablished, doctrinalFlags as Json, status, createdAt, updatedAt)
+- Profile (id, churchId, pastorId, fullName, age, city, state, education, occupation, seeking, testimony, ministryInvolvement, pastorRecommendation, endorsements as Json, photoUrl, fatherName, status, yearsInChurch, createdAt, updatedAt)
+- Alliance (id, profile1Id, profile2Id, church1Id, church2Id, stage 1-5, status, openedAt, dissolvedAt, dissolvedReason as nullable, notes as Json array, createdAt, updatedAt)
+- CounsellingSession (id, allianceId, groomName, brideName, groomChurch, brideChurch, counsellorName, sessionNumber 1-6, sessionDate, format, status, completedAt, notes, createdAt)
+- Vendor (id, churchId, ownerUserId, businessName, category as Enum, location, city, state, description, priceFrom, priceType, photoUrl, ownerName, phone, email, website, verified, featured, createdAt, updatedAt)
+- Notification (id, userId, type, title, body, read, relatedEntityType, relatedEntityId, createdAt)
+- ShortlistedProfile (id, pastorId, profileId, createdAt)
+- AllianceNote (id, allianceId, authorId, content, createdAt)
+- AuditLog (id, userId, action, entityType, entityId, metadata as Json, ipAddress, userAgent, createdAt)
+- AIInteraction (id, userId, prompt, response, tokensUsed, feature, createdAt)
+
+Add all foreign keys, indexes, and enums:
+- UserRole: SUPER_ADMIN, CHURCH_ADMIN, PASTOR, VENDOR, READ_ONLY
+- ChurchStatus: PENDING, APPROVED, REJECTED, SUSPENDED
+- ProfileStatus: PENDING, APPROVED, PAUSED, DELETED
+- AllianceStatus: ACTIVE, COMPLETED, DISSOLVED
+- VendorCategory: TAILORS, CAKES, PHOTOGRAPHY, CATERING, CARS, DECOR, VENUES, MUSIC, INVITATIONS, OTHER
+- VendorStatus: PENDING, APPROVED, REJECTED, SUSPENDED
+- SessionStatus: SCHEDULED, COMPLETED, CANCELLED
+- NotificationType: INTEREST, ALLIANCE_UPDATE, PROFILE_APPROVED, COUNSELLING_REMINDER, VENDOR_CONTACT, SYSTEM
+
+---
+
+## API MODULES — BUILD ALL OF THESE
+
+### AUTH MODULE (apps/api/src/modules/auth/)
+Routes:
+- POST /api/v1/auth/register           — church admin initial registration
+- POST /api/v1/auth/login              — email + password → returns partial token if MFA enabled
+- POST /api/v1/auth/mfa/verify         — verify TOTP or SMS OTP → return full JWT pair
+- POST /api/v1/auth/mfa/setup          — generate TOTP secret and QR code
+- POST /api/v1/auth/mfa/enable         — confirm TOTP works and enable MFA
+- POST /api/v1/auth/refresh            — rotate refresh token
+- POST /api/v1/auth/logout             — invalidate refresh token in Redis
+- POST /api/v1/auth/forgot-password    — send reset link via email
+- POST /api/v1/auth/reset-password     — validate token and set new password
+- GET  /api/v1/auth/sessions           — list active sessions
+- DELETE /api/v1/auth/sessions/:id     — revoke specific session
+
+Security requirements:
+- bcrypt cost factor 12
+- JWT RS256 — generate key pair on startup if not in env
+- Access token: 15min TTL
+- Refresh token: 7 days, stored in Redis with user_id mapping
+- HttpOnly cookie for refresh token
+- Max 5 failed logins → lock account 30 min
+- All auth events written to AuditLog
+
+### CHURCHES MODULE (apps/api/src/modules/churches/)
+Routes:
+- POST   /api/v1/churches              — submit registration
+- GET    /api/v1/churches              — admin: list all with filters
+- GET    /api/v1/churches/:id          — get church detail
+- PATCH  /api/v1/churches/:id/approve  — admin only: approve church
+- PATCH  /api/v1/churches/:id/reject   — admin only: reject with reason
+- PATCH  /api/v1/churches/:id          — update church details
+- DELETE /api/v1/churches/:id          — admin only: soft delete
+
+### PROFILES MODULE (apps/api/src/modules/profiles/)
+Routes:
+- POST   /api/v1/profiles              — pastor creates profile
+- GET    /api/v1/profiles              — search with filters: state, seeking, ageMin, ageMax, church, denomination, q
+- GET    /api/v1/profiles/:id          — get full profile (pastor/admin only)
+- PUT    /api/v1/profiles/:id          — update profile
+- PATCH  /api/v1/profiles/:id/approve  — admin approves profile
+- PATCH  /api/v1/profiles/:id/pause    — pastor pauses profile
+- DELETE /api/v1/profiles/:id          — soft delete + schedule hard delete in 30 days
+- POST   /api/v1/profiles/:id/photo    — upload photo to S3
+- POST   /api/v1/profiles/shortlist/:id    — add to shortlist
+- DELETE /api/v1/profiles/shortlist/:id    — remove from shortlist
+- GET    /api/v1/profiles/shortlist        — get pastor's shortlist
+
+### ALLIANCES MODULE (apps/api/src/modules/alliances/)
+Routes:
+- POST   /api/v1/alliances                      — create alliance (express interest)
+- GET    /api/v1/alliances                      — list alliances for pastor/admin
+- GET    /api/v1/alliances/:id                  — alliance detail with history
+- PATCH  /api/v1/alliances/:id/advance          — advance stage with note
+- PATCH  /api/v1/alliances/:id/dissolve         — dissolve (no reason required)
+- POST   /api/v1/alliances/:id/notes            — add note to alliance
+- GET    /api/v1/alliances/:id/notes            — get all notes
+
+### COUNSELLING MODULE (apps/api/src/modules/counselling/)
+Routes:
+- POST   /api/v1/counselling                    — register couple for programme
+- GET    /api/v1/counselling                    — list sessions for pastor/admin
+- GET    /api/v1/counselling/:id                — get session detail
+- PATCH  /api/v1/counselling/:id/complete       — mark session as complete
+- GET    /api/v1/counselling/:id/certificate    — generate PDF certificate (Node.js PDFKit)
+- GET    /api/v1/counselling/:id/questions      — AI-generated session questions
+
+### VENDORS MODULE (apps/api/src/modules/vendors/)
+Routes:
+- POST   /api/v1/vendors                        — vendor submits listing
+- GET    /api/v1/vendors                        — browse vendors with category filter
+- GET    /api/v1/vendors/:id                    — vendor detail
+- PUT    /api/v1/vendors/:id                    — vendor updates listing
+- PATCH  /api/v1/vendors/:id/verify             — admin/pastor verifies vendor
+- PATCH  /api/v1/vendors/:id/feature            — admin marks as featured
+- DELETE /api/v1/vendors/:id                    — soft delete
+- POST   /api/v1/vendors/:id/contact            — pastor contacts vendor (logs + sends email)
+
+### AI MODULE (apps/api/src/modules/ai/)
+Routes:
+- POST   /api/v1/ai/match                       — get compatibility ranked matches for a profile
+- POST   /api/v1/ai/letter                      — draft pastoral introduction letter
+- POST   /api/v1/ai/counselling-questions       — generate session questions
+- POST   /api/v1/ai/alliance-summary            — summarise alliance status and next steps
+- POST   /api/v1/ai/chat                        — freeform pastor assistant chat
+
+AI implementation:
+- Use @anthropic-ai/sdk
+- System prompt must include Reformed church context, platform rules, active profiles (anonymised), and a strict instruction to never output PII (phone, email, address)
+- Matching score: denomination 30% + age gap 20% + ministry depth 20% + endorsements 15% + location 15%
+- All AI interactions stored in AIInteraction table
+- Daily spend limit: $20 alert, $50 circuit breaker using token counting
+- Rate limit: 50 AI requests per user per day
+- Cache common responses in Redis with 1h TTL
+
+### NOTIFICATIONS MODULE (apps/api/src/modules/notifications/)
+Routes:
+- GET    /api/v1/notifications                  — get user's notifications
+- PATCH  /api/v1/notifications/:id/read         — mark as read
+- PATCH  /api/v1/notifications/read-all         — mark all as read
+- DELETE /api/v1/notifications/:id              — delete notification
+
+Notification triggers (call from other modules):
+- notifyNewInterest(allianceId) → email + in-app + SMS to receiving pastor
+- notifyAllianceAdvanced(allianceId, stage) → email + in-app to both pastors
+- notifyProfileApproved(profileId) → email + in-app to creating pastor
+- notifyChurchApproved(churchId) → email to pastor
+- notifyCounsellingReminder(sessionId) → email + SMS 48h before session
+
+### DASHBOARD MODULE (apps/api/src/modules/dashboard/)
+Routes:
+- GET    /api/v1/dashboard/pastor               — pastor stats + recent activity
+- GET    /api/v1/dashboard/admin                — platform-wide KPIs (admin only)
+
+### UPLOADS MODULE (apps/api/src/modules/uploads/)
+- Multer middleware for handling multipart/form-data
+- Validate: JPEG/PNG only, max 5MB
+- Sharp (Node.js) for image resizing: thumbnail 200x200, medium 600x600
+- Upload both sizes to S3
+- Return signed URL valid for 24h for private profile photos
+- Public URL for vendor photos
+
+---
+
+## MIDDLEWARE (apps/api/src/middleware/)
+
+Build all these middleware files:
+
+### authenticate.ts
+- Extract JWT from Authorization header
+- Verify RS256 signature
+- Check token not in Redis blacklist
+- Attach decoded user to req.user
+- Return 401 if invalid
+
+### authorize.ts
+- RBAC middleware factory: authorize(UserRole.PASTOR, UserRole.CHURCH_ADMIN)
+- Check req.user.role is in allowed roles
+- Return 403 if not authorised
+
+### churchGuard.ts
+- Ensure pastor can only access profiles/alliances belonging to their church_id
+- Attach church context to request
+
+### rateLimiter.ts
+- General API: 100 req/min per IP
+- Auth endpoints: 10 req/15min per IP
+- AI endpoints: 50 req/day per authenticated user (Redis counter)
+- Use express-rate-limit with rate-limit-redis store
+
+### errorHandler.ts
+- Global error handler
+- Zod validation errors → 422 with field-level messages
+- Prisma errors → mapped to appropriate HTTP codes
+- JWT errors → 401
+- All errors logged to Winston
+- Never expose stack traces in production
+
+### requestLogger.ts
+- Log all requests: method, path, status, duration, user_id
+- Winston transport to file + console
+
+### auditLogger.ts
+- Write to AuditLog table for: login, logout, profile create/edit/delete, alliance create/dissolve, church approve/reject
+- Include userId, action, entityType, entityId, ipAddress, userAgent
+
+---
+
+## FRONTEND — MATCH PROTOTYPE EXACTLY
+
+### Design System (src/styles/tokens.css + tailwind.config.ts)
+Build a complete Tailwind theme extending with ALL custom tokens from the prototype:
+- Colors: crimson-deep, crimson, crimson-light, gold, gold-light, cream, warm-white, rose-pale
+- Fonts: 'Cormorant Garamond' for display, 'Jost' for body
+- Custom shadows, border-radius values, spacing
+
+### Component Requirements
+
+**Button component** — variants: primary (gold fill), outline (transparent + gold border), ghost, danger, sizes: sm, md, lg
+
+**ProfileCard component** — must match prototype exactly:
+- 210px photo area with object-fit cover, object-position top
+- Gold "Seeking Bride/Groom" badge top-right
+- Church name bottom-left over gradient
+- Name, age, city, church below
+- Tags for occupation and years
+- Truncated testimony in italic
+- Endorsement dots (filled gold = endorsed, faded = empty)
+- Hover: lift shadow + scale photo slightly
+
+**AlliancePipeline component** — 5-stage visual tracker:
+- Party avatars with real photos
+- Connected dots with lines
+- Active stage in gold, completed in crimson, pending in grey
+- Stage labels below each dot
+
+**AIPanel component** — dark crimson panel:
+- Gold "✦ AI Pastoral Assistant" badge
+- 6 quick-action feature tiles (2x3 grid)
+- Chat message area with user/bot message bubbles
+- Input field + "Ask ✦" button
+- Typing indicator (3 animated dots)
+- Must call /api/v1/ai/chat in real-time
+
+**HeroSection** — full viewport height:
+- Background wedding photo (use Unsplash URL from prototype)
+- Dark crimson overlay (NOT fading to cream — stays dark)
+- Animated stats counter on load
+- Gold primary CTA button with glow shadow
+- White outline secondary button
+
+### Pages — Build All
+
+**Home page** — matches prototype exactly with all sections
+
+**Auth pages:**
+- Login: email + password → MFA step if enabled
+- MFA verification: 6-digit input with auto-focus and auto-submit
+- Forgot password and reset password flows
+
+**Profiles page:**
+- Search bar with all filters
+- Responsive 3-column grid of ProfileCards
+- AI Smart Match banner at top
+- Click opens ProfileModal with full details + Express Interest / Shortlist buttons
+
+**Add Profile page:**
+- Multi-step form (4 steps with progress indicator):
+  - Step 1: Personal Information
+  - Step 2: Church & Faith (testimony, ministry, pastoral note)
+  - Step 3: Family Background
+  - Step 4: Endorsements (min 2 required)
+- Photo upload with preview
+- Zod validation on each step before advancing
+
+**Alliance pages:**
+- List view with status pills
+- Detail view with full pipeline, notes timeline, meeting schedule
+
+**Counselling pages:**
+- Programme overview with 6 module cards
+- Registration form
+- Session tracker showing completion status per session
+- PDF certificate download button
+
+**Vendors page:**
+- Category tab filter
+- Vendor list with photo thumbnails, verified badges, pricing
+- Contact form that posts to /api/v1/vendors/:id/contact
+
+**Dashboard:**
+- Stat cards with animated counters
+- Notification feed (real-time via socket.io)
+- Alliance pipeline overview
+- Upcoming schedule
+- My profiles with pause/edit actions
+- AI Assistant panel
+
+**Church registration page:**
+- Doctrinal affirmation checkboxes (all 4 must be checked)
+- Multi-section form with validation
+
+---
+
+## REAL-TIME (Socket.io)
+
+Server (apps/api/src/socket/):
+- Authenticate socket connection using JWT
+- Join user to room: user:{userId}
+- Emit events:
+  - notification:new — when new notification created
+  - alliance:updated — when alliance stage changes
+  - ai:response — stream AI response tokens (use Anthropic streaming)
+
+Client (apps/web/src/hooks/useSocket.ts):
+- Connect on auth
+- Listen for notification:new → update Zustand notificationStore → show toast
+- Listen for alliance:updated → invalidate React Query cache
+- Listen for ai:response → stream tokens into chat UI
+
+---
+
+## ENVIRONMENT VARIABLES (.env.example)
+
+Document all these:
+# App
+NODE_ENV=development
+PORT=3001
+FRONTEND_URL=http://localhost:5173
+API_URL=http://localhost:3001
+
+# Database
+DATABASE_URL=postgresql://yoke:yoke_dev_password@localhost:5432/yoke_db
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# JWT (RS256 key pair — generate on first run)
+JWT_PRIVATE_KEY=
+JWT_PUBLIC_KEY=
+JWT_ACCESS_TTL=900
+JWT_REFRESH_TTL=604800
+
+# AWS
+AWS_REGION=ap-south-1
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+AWS_SES_FROM_EMAIL=noreply@yokematrimony.in
+
+# Twilio
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# Anthropic
+ANTHROPIC_API_KEY=
+AI_DAILY_SPEND_ALERT=20
+AI_DAILY_SPEND_LIMIT=50
+
+# App Config
+BCRYPT_ROUNDS=12
+MAX_LOGIN_ATTEMPTS=5
+ACCOUNT_LOCKOUT_MINUTES=30
+PROFILE_HARD_DELETE_DAYS=30
+
+---
+
+## DOCKER COMPOSE
+
+Build docker-compose.yml with services:
+- postgres:16-alpine — volume mounted, health check
+- redis:7-alpine — volume mounted, health check
+- api — depends on postgres + redis healthy, hot reload in dev
+- web — Vite dev server in dev, built static in prod
+- nginx — reverse proxy: /api → api:3001, / → web:5173
+
+---
+
+## GITHUB ACTIONS CI
+
+Build .github/workflows/ci.yml:
+- Trigger: PR to main
+- Jobs: lint (ESLint), typecheck (tsc --noEmit), test (jest), build (docker build)
+- Cache: node_modules, docker layers
+
+---
+
+## SEED DATA
+
+Build prisma/seed.ts with realistic seed data matching the prototype:
+- 1 Super Admin user
+- 3 approved Reformed churches (Hyderabad, Chennai, Vijayawada)
+- 6 approved profiles matching prototype names and details (Samuel Raju, Priya Joseph, David Mathew, Ruth Thomas, Joel Philip, Esther Kumar) — with the exact Unsplash photo URLs from the prototype
+- 7 verified vendors matching prototype (Grace Bridal Studio, Heavenly Bakes, Covenant Frames, etc.)
+- 2 active alliances (Samuel+Priya at stage 2, David+Esther at stage 3)
+- Sample notifications and counselling sessions
+
+---
+
+## IMPLEMENTATION ORDER
+
+Build in this exact sequence:
+
+1. Initialise monorepo (npm workspaces, root package.json, tsconfig paths)
+2. packages/shared — all TypeScript types and Zod schemas first
+3. apps/api — Prisma schema → migrations → seed
+4. apps/api — Express server setup, middleware stack
+5. apps/api — Auth module (complete, with MFA, tested)
+6. apps/api — Churches module
+7. apps/api — Profiles module with S3 upload
+8. apps/api — Alliances module
+9. apps/api — Counselling module with PDFKit certificate
+10. apps/api — Vendors module
+11. apps/api — AI module with Anthropic SDK + streaming
+12. apps/api — Notifications module + Socket.io
+13. apps/api — Dashboard module
+14. apps/web — Vite setup, Tailwind config with all design tokens
+15. apps/web — Design system components (Button, Input, Modal, etc.)
+16. apps/web — Auth pages (Login, MFA, ForgotPassword)
+17. apps/web — Home page (match prototype exactly)
+18. apps/web — Profile pages
+19. apps/web — Alliance pages
+20. apps/web — Counselling pages
+21. apps/web — Vendor pages
+22. apps/web — Dashboard pages with AI panel
+23. apps/web — Church registration page
+24. infrastructure/ — Docker Compose, Nginx config
+25. .github/ — CI/CD workflows
+26. README.md — complete setup and development guide
+
+---
+
+## QUALITY REQUIREMENTS
+
+- TypeScript strict mode throughout — no `any` types
+- All API endpoints have Zod input validation
+- All sensitive fields encrypted at database level using Prisma middleware
+- Unit tests for: auth service, profile service, alliance service, AI scoring algorithm
+- Integration tests for: all API endpoints using Supertest + test database
+- ESLint + Prettier configured and passing
+- No secrets committed — only .env.example with descriptions
+- All Prisma queries use parameterised inputs — no raw SQL string interpolation
+- Row-level security: pastor can only read/write profiles for their church_id
+- Every HTTP endpoint returns consistent JSON: { success: boolean, data?: any, error?: { code, message, field? } }
+- API response time P95 < 800ms (add response-time middleware to verify)
+
+---
+
+## START COMMAND
+
+Begin by:
+1. Reading the HTML prototype file to understand all UI patterns, exact colors, typography and layouts
+2. Reading the BRD document for all business rules, data models and acceptance criteria
+3. Then create the full project structure and implement in the order listed above
+4. After each module, confirm it compiles and tests pass before moving to the next
+
+The application name is YOKE. Use "Yoke" in all user-facing text, package names (yoke-api, yoke-web, yoke-shared), Docker image names, and the README.

@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Prisma
+apps/api/src/prisma/migrations/dev.db
+apps/api/src/prisma/*.db
+
+# Test coverage
+coverage/
+
+# PM2
+ecosystem.config.js.bak
+
+# Docker
+.docker/
+
+# Keys — never commit RSA keys
+*.pem
+*.key
+private.key
+public.key
+
+# Claude 
+.Claude/

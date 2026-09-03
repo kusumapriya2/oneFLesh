@@ -1,0 +1,314 @@
+/* ============================================================
+   OneFlesh — Global Styles (Dark Theme)
+   Reformed Church Matrimonial Platform
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Custom Properties ──────────────────────────────── */
+
+:root {
+  /* Brand colours */
+  --crimson-deep: #4a0a12;
+  --crimson: #6b0f1a;
+  --crimson-light: #8b1a2a;
+  --gold: #c9a84c;
+  --gold-light: #e2c97e;
+
+  /* Dark surface tokens */
+  --cream: #0d0204;
+  --warm-white: #1a0508;
+  --rose-pale: #200608;
+  --text-muted: #a09080;
+  --text-deep: #ede0d4;
+  --border-color: rgba(201, 168, 76, 0.18);
+
+  /* Shadows */
+  --shadow-brand: 0 8px 40px rgba(0, 0, 0, 0.55);
+  --shadow-soft: 0 2px 16px rgba(0, 0, 0, 0.45);
+  --shadow-gold: 0 4px 20px rgba(201, 168, 76, 0.35);
+
+  /* Typography */
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Jost', sans-serif;
+
+  /* Transitions */
+  --transition-base: 200ms ease;
+  --transition-smooth: 300ms ease;
+}
+
+/* ─── Base Styles ────────────────────────────────────────── */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    color: #2C0F12;
+    background-color: #fdf9f7;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    color: var(--gold-light);
+    line-height: 1.2;
+    font-weight: 400;
+  }
+
+  a {
+    color: var(--gold);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+
+  a:hover {
+    color: var(--gold-light);
+  }
+
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+
+  ::selection {
+    background-color: rgba(201, 168, 76, 0.25);
+    color: var(--gold-light);
+  }
+}
+
+/* ─── Scrollbar Styles ───────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 3px;
+  transition: background var(--transition-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.45);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--cream);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201, 168, 76, 0.25) var(--cream);
+}
+
+/* ─── Component Layer ────────────────────────────────────── */
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-body font-medium text-sm text-crimson-deep bg-gold border border-transparent transition-all duration-200;
+    box-shadow: var(--shadow-gold);
+  }
+
+  .btn-primary:hover {
+    @apply bg-gold-light;
+    box-shadow: 0 6px 28px rgba(201, 168, 76, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-gold);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-body font-medium text-sm text-gold border border-transparent transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(201, 168, 76, 0.3);
+  }
+
+  .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: rgba(201, 168, 76, 0.5);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-body font-medium text-sm bg-transparent border border-transparent transition-all duration-200;
+    color: rgba(226, 201, 126, 0.70);
+  }
+
+  .btn-ghost:hover {
+    @apply text-gold-light;
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* ── Card ── */
+  .card {
+    @apply bg-warm-white rounded-2xl border;
+    border-color: rgba(201, 168, 76, 0.18);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .card-elevated {
+    @apply bg-warm-white rounded-2xl border;
+    border-color: rgba(201, 168, 76, 0.18);
+    box-shadow: var(--shadow-brand);
+  }
+
+  /* ── Input ── */
+  .input-base {
+    @apply w-full px-4 py-2.5 rounded-xl border text-text-deep font-body text-sm outline-none transition-all duration-200;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(201, 168, 76, 0.22);
+    color: var(--text-deep);
+  }
+
+  .input-base::placeholder {
+    color: rgba(160, 144, 128, 0.5);
+  }
+
+  .input-base:focus {
+    border-color: rgba(201, 168, 76, 0.55);
+    box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.20);
+  }
+
+  /* ── Badge ── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium font-body;
+  }
+
+  .badge-gold {
+    @apply badge bg-gold text-crimson-deep;
+  }
+
+  .badge-crimson {
+    @apply badge text-gold;
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .badge-success {
+    @apply badge text-green-400;
+    background-color: rgba(46, 125, 50, 0.18);
+  }
+
+  .badge-warning {
+    @apply badge text-amber-400;
+    background-color: rgba(245, 158, 11, 0.18);
+  }
+
+  /* ── Section headings ── */
+  .section-title {
+    @apply font-display text-3xl md:text-4xl font-light tracking-wide text-gold-light;
+  }
+
+  .section-subtitle {
+    @apply font-body text-base text-text-muted font-light;
+  }
+
+  /* ── Divider ── */
+  .divider-gold {
+    @apply flex items-center gap-4;
+  }
+
+  .divider-gold::before,
+  .divider-gold::after {
+    content: '';
+    @apply flex-1 h-px bg-gold opacity-40;
+  }
+}
+
+/* ─── Utility Layer ──────────────────────────────────────── */
+
+@layer utilities {
+  /* Focus ring for accessibility */
+  .focus-brand:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cream), 0 0 0 4px rgba(201, 168, 76, 0.50);
+  }
+
+  /* Text gradients */
+  .text-gradient-crimson {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animate fade-in */
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease forwards;
+  }
+}
+
+/* ─── Keyframes ──────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

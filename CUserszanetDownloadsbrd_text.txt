@@ -1,0 +1,611 @@
+COVENANT MATRIMONY
+Reformed Church Matrimonial Platform — India
+
+Business Requirements Document (BRD)
+Software Requirements Specification (SRS)
+
+Document Version
+v1.0 — Initial Release
+Prepared By
+Agile Manager &amp; Business Analyst
+Date
+29 May 2025
+Classification
+Confidential — Internal Use Only
+Project Code
+CM-2025-IND
+Platform Type
+Web Application + Mobile (React Native)
+Target Market
+Reformed Churches across India
+
+1. Document Control &amp; Revision History
+
+1.1 Revision History
+Version
+Date
+Author
+Description
+Status
+1.0
+29 May 2025
+Business Analyst
+Initial BRD / SRS draft covering all modules
+Approved
+1.1
+TBD
+BA / Tech Lead
+Security review updates post architecture sign-off
+Planned
+1.2
+TBD
+BA / QA Lead
+UAT feedback incorporation
+Planned
+
+1.2 Document Purpose
+This Business Requirements Document (BRD) and Software Requirements Specification (SRS) defines all functional, non-functional, security, and technical requirements for the Covenant Matrimony platform — a pastor-led matrimonial web and mobile application exclusively serving Reformed churches across India.
+
+This document is the single source of truth for the product development team, covering:
+All application modules and their detailed functional requirements
+User roles, permissions, and access control
+Application security architecture and compliance requirements
+API specifications and third-party integrations
+Non-functional requirements: performance, scalability, availability
+Agile delivery structure: epics, user stories, acceptance criteria
+
+1.3 Scope
+The platform consists of five primary components:
+Web Application (React.js) — primary interface for pastors and platform administrators
+Mobile Application (React Native) — iOS and Android for pastors on the go
+RESTful Backend API (Node.js / Django REST Framework)
+PostgreSQL relational database with encrypted PII columns
+AI Matching Engine — powered by Claude API (Anthropic)
+
+1.4 Out of Scope
+Direct candidate (bride/groom) access to profiles — all access is pastor-mediated
+Integration with government identity verification systems (Phase 2)
+Payment gateway for Phase 1 free tier (Phase 2)
+Video calling feature within platform (WhatsApp / Zoom links used instead)
+
+2. Stakeholders &amp; User Roles
+
+2.1 Stakeholder Register
+Stakeholder
+Role
+Interest / Concern
+Priority
+Platform Admin
+Covenant Matrimony team
+Approve churches, oversee platform integrity
+Critical
+Pastor / Elder
+Primary end user
+Create profiles, search matches, manage alliances
+Critical
+Church Board
+Institutional approver
+Church-level subscription and doctrinal compliance
+High
+Candidates (Bride/Groom)
+Indirect user
+Profile subject — no direct login in Phase 1
+Medium
+Families
+Stakeholder
+Informed via pastor, no platform access
+Medium
+Christian Vendors
+Service provider
+List business, receive enquiries
+High
+Tech Team
+Development
+Build, test, and deploy platform
+Critical
+
+2.2 Role Definitions &amp; Permissions Matrix
+Permission
+Super Admin
+Church Admin
+Pastor
+Vendor
+Read-Only
+Approve / reject churches
+Yes
+No
+No
+No
+No
+Create / edit profiles
+Yes
+Yes
+Yes
+No
+No
+Search all profiles
+Yes
+Yes
+Yes
+No
+No
+Express alliance interest
+Yes
+Yes
+Yes
+No
+No
+Manage alliances
+Yes
+Yes
+Yes (own)
+No
+No
+Register counselling
+Yes
+Yes
+Yes
+No
+No
+List vendor business
+No
+No
+No
+Yes
+No
+View vendor directory
+Yes
+Yes
+Yes
+Yes
+Yes
+Access AI assistant
+Yes
+Yes
+Yes
+No
+No
+View platform analytics
+Yes
+No
+No
+No
+No
+Manage subscriptions
+Yes
+Yes (own)
+No
+No
+No
+
+3. Application Security Requirements
+NOTE: Security is treated as a first-class concern. All requirements in this section are MANDATORY and non-negotiable for production launch.
+
+3.1 Authentication
+3.1.1 Login Methods
+The platform shall support the following authentication mechanisms:
+Email + Password (primary method for Pastor and Admin accounts)
+OTP via SMS (Twilio) — mandatory for first-time login and password reset
+Google OAuth 2.0 SSO — optional convenience login for pastors
+Magic link via email — optional for password-less access
+
+3.1.2 Password Policy
+Policy Rule
+Requirement
+Minimum length
+12 characters
+Complexity
+Must contain uppercase, lowercase, number, and special character
+History
+Last 5 passwords may not be reused
+Expiry
+Passwords expire every 180 days; users prompted to change
+Failed attempts lockout
+Account locked after 5 consecutive failed attempts
+Lockout duration
+30 minutes; unlockable via email OTP
+Storage
+Bcrypt with cost factor 12 — NEVER plaintext or MD5/SHA1
+
+3.1.3 Multi-Factor Authentication (MFA)
+MFA is mandatory for all Pastor and Admin roles
+Supported methods: TOTP (Google Authenticator / Authy), SMS OTP
+Backup codes: 8 single-use recovery codes generated at setup
+MFA bypass is NOT permitted; no admin override in production
+
+3.2 Authorisation &amp; Access Control
+3.2.1 Role-Based Access Control (RBAC)
+The system shall implement RBAC with the following principles:
+Least-privilege: all roles default to minimal permissions
+Attribute-Based Access Control (ABAC) on profiles: a pastor can only edit profiles belonging to their verified church
+Row-level security enforced at database layer (PostgreSQL RLS policies)
+All API endpoints validate JWT claims for role and church_id on every request
+
+3.2.2 Session Management
+Parameter
+Specification
+Access token type
+JWT (RS256 signed with 2048-bit RSA key)
+Access token TTL
+15 minutes
+Refresh token TTL
+7 days (rotated on each use)
+Session storage
+HttpOnly, Secure, SameSite=Strict cookies — never localStorage
+Concurrent sessions
+Maximum 3 concurrent sessions per account
+Session invalidation
+Immediate on password change, logout, or account suspension
+Token blacklisting
+Redis-based revocation list for invalidated tokens
+
+3.3 Data Security &amp; Privacy
+3.3.1 Data Classification
+Classification
+Data Type
+Protection
+Top Secret
+Passwords, private keys, OTP secrets
+Bcrypt/AES-256 encrypted, never logged
+Confidential
+Profile details, family info, testimonies, phone numbers
+AES-256 at rest, TLS 1.3 in transit
+Internal
+Church details, vendor info, alliance statuses
+Encrypted at rest, role-gated access
+Public
+Platform statistics, public vendor descriptions
+Standard HTTPS, no encryption needed
+
+3.3.2 Encryption Standards
+All data in transit: TLS 1.3 minimum (TLS 1.0 / 1.1 disabled)
+All data at rest: AES-256-GCM for database and file storage
+PII columns (phone, email, Aadhaar if collected): column-level encryption via pgcrypto
+File uploads (photos): encrypted server-side in S3 with SSE-S3
+Backup files: encrypted with separate KMS key
+
+3.3.3 Data Residency &amp; Compliance
+All user data stored on AWS ap-south-1 (Mumbai) region — Indian data residency
+Compliance with IT Act 2000, DPDP Act 2023 (India)
+Right to erasure: user account and all PII must be permanently deletable within 30 days of request
+Audit log retention: 2 years minimum, stored separately from application data
+
+3.4 API Security
+Security Control
+Implementation
+Authentication
+JWT Bearer token on every authenticated endpoint
+Rate limiting
+100 req/min per IP; 1000 req/min per authenticated user
+Input validation
+Zod / Pydantic schema validation on all request bodies
+SQL injection prevention
+Parameterised queries only; no string concatenation in queries
+XSS prevention
+Content-Security-Policy headers; DOMPurify on all rendered HTML
+CSRF protection
+SameSite=Strict cookies; CSRF token on state-changing requests
+CORS policy
+Whitelist: app domain, admin domain only — no wildcard origins
+API versioning
+All endpoints prefixed /api/v1/ — breaking changes require new version
+Sensitive data in URLs
+Never — profile IDs are UUIDs, no PII in query parameters
+HTTPS enforcement
+HSTS header with max-age=31536000; includeSubDomains; preload
+
+3.5 Infrastructure Security
+Hosting: AWS (Mumbai region) with VPC isolation — RDS not internet-accessible
+WAF: AWS WAF with OWASP Core Rule Set enabled on CloudFront
+Penetration testing: mandatory before launch, annually thereafter
+Vulnerability scanning: OWASP ZAP in CI/CD pipeline on every release
+Secrets management: AWS Secrets Manager — no credentials in source code or env files
+Container security: Docker images scanned via Trivy in CI/CD pipeline
+Dependency auditing: npm audit / pip audit run on every build
+Incident response plan: documented SLA — P1 (breach) response within 1 hour
+
+4. Module Requirements
+
+4.1 Module: Church Registration &amp; Onboarding
+Epic: CH-01 — Church Onboarding
+
+Story ID
+User Story
+Priority
+Acceptance Criteria
+CH-01-01
+As a pastor, I want to register my Reformed church so I can access the matrimonial platform.
+Must Have
+Form submits with all required fields; admin notified; status = &apos;pending&apos;
+CH-01-02
+As a platform admin, I want to approve or reject church applications with a reason.
+Must Have
+Admin can approve/reject; pastor receives email notification within 24h
+CH-01-03
+As a pastor, I want to affirm doctrinal statements during registration.
+Must Have
+All 4 doctrinal checkboxes must be checked; form blocked if unchecked
+CH-01-04
+As an admin, I want to mark churches as verified with a denomination badge.
+Should Have
+Verified churches display a badge visible to other pastors
+CH-01-05
+As a pastor, I want to update church details after approval.
+Should Have
+Changes re-trigger admin review for denomination/doctrinal fields only
+
+Church Registration — Data Model
+Field
+Type
+Validation
+Required
+church_id
+UUID (PK)
+Auto-generated
+System
+church_name
+VARCHAR(200)
+Non-empty, max 200 chars
+Yes
+denomination
+ENUM
+From approved list
+Yes
+city
+VARCHAR(100)
+Non-empty
+Yes
+state
+ENUM(Indian states)
+From approved list
+Yes
+pastor_name
+VARCHAR(200)
+Non-empty
+Yes
+pastor_email
+VARCHAR(255)
+Valid email, unique
+Yes
+pastor_phone
+VARCHAR(15)
+Indian mobile format
+Yes
+congregation_size
+INTEGER
+1–10000
+No
+year_established
+INTEGER
+1800–2025
+No
+doctrinal_flags
+JSONB
+4 boolean fields all true
+Yes
+status
+ENUM
+pending/approved/rejected/suspended
+System
+created_at
+TIMESTAMP
+Auto
+System
+
+4.2 Module: Login &amp; Authentication
+Epic: AUTH-01 — Secure Login
+
+Story ID
+User Story
+Priority
+Acceptance Criteria
+AUTH-01-01
+As a pastor, I want to log in with email and password securely.
+Must Have
+Login succeeds with correct credentials; JWT issued; MFA prompted
+AUTH-01-02
+As a user, I want MFA via SMS OTP or TOTP app.
+Must Have
+OTP sent within 30s; valid for 5 min; 6-digit code required
+AUTH-01-03
+As a user, I want to reset my password via email.
+Must Have
+Reset link expires in 15 min; new password must meet policy
+AUTH-01-04
+As a user, I want to log in with Google SSO.
+Should Have
+OAuth 2.0 flow; Google email must match registered church email
+AUTH-01-05
+As an admin, I want to force-logout any user session.
+Must Have
+Session invalidated immediately; user redirected to login
+AUTH-01-06
+As a user, I want to see my active sessions and revoke them.
+Should Have
+Session list with device/IP; revoke button works immediately
+AUTH-01-07
+As an admin, I want to lock/unlock accounts.
+Must Have
+Locked accounts cannot login; unlock via admin panel or email OTP
+
+Authentication Flow — States
+State
+Trigger
+Next State
+Unauthenticated
+App load / session expired
+Login page shown
+Credentials verified
+Email + password correct
+MFA challenge issued
+MFA passed
+OTP / TOTP correct
+JWT issued, redirect to dashboard
+MFA failed (3x)
+3 wrong OTP attempts
+Account soft-locked 30 min
+Password expired
+180-day policy triggered
+Force password change screen
+Account locked
+5 failed logins
+Lockout screen, email OTP to unlock
+Session expired
+Access token TTL elapsed, refresh invalid
+Silent refresh fails → logout
+
+4.3 Module: Profile Management
+Epic: PROF-01 — Pastor-Created Profiles
+
+Story ID
+User Story
+Priority
+Acceptance Criteria
+PROF-01-01
+As a pastor, I want to create a matrimonial profile for a candidate in my church.
+Must Have
+All mandatory fields validated; profile status = &apos;pending_approval&apos;
+PROF-01-02
+As an admin, I want to approve/reject profiles before they become searchable.
+Must Have
+Approved profiles visible in search; rejected profiles returned with reason
+PROF-01-03
+As a pastor, I want to upload a photo for the candidate profile.
+Must Have
+JPEG/PNG only; max 5MB; stored in S3; face must be visible
+PROF-01-04
+As a pastor, I want to add at least 2 congregation endorsements.
+Must Have
+Minimum 2 endorsements required before submission
+PROF-01-05
+As a pastor, I want to pause a profile to hide it from search temporarily.
+Must Have
+Profile status changes to &apos;paused&apos;; not visible in search; data preserved
+PROF-01-06
+As a pastor, I want to edit a profile and resubmit for approval.
+Should Have
+Edits trigger re-approval only for testimony/endorsement changes
+PROF-01-07
+As a pastor, I want to permanently delete a profile on candidate&apos;s request.
+Must Have
+Profile and all PII soft-deleted; hard-deleted after 30 days; alliance records anonymised
+PROF-01-08
+As a pastor, I want to search profiles by state, gender sought, age range, and church denomination.
+Must Have
+Filters return correct results; combined filters work correctly
+PROF-01-09
+As a pastor, I want to shortlist profiles for later review.
+Should Have
+Shortlisted profiles saved per pastor login; max 20 shortlists
+
+Profile — Data Model
+Field
+Type
+Validation
+Notes
+profile_id
+UUID (PK)
+Auto-generated
+Primary key
+church_id
+UUID (FK)
+Must be approved church
+Foreign key
+pastor_id
+UUID (FK)
+Must be verified pastor
+Creator reference
+full_name
+VARCHAR(200)
+Non-empty
+Encrypted at rest
+age
+INTEGER
+18–60
+—
+city
+VARCHAR(100)
+Non-empty
+—
+state
+ENUM
+Indian states
+—
+education
+VARCHAR(300)
+—
+—
+occupation
+VARCHAR(200)
+—
+—
+seeking
+ENUM
+bride / groom
+—
+testimony
+TEXT
+Min 100 chars
+Encrypted
+ministry_involvement
+TEXT
+—
+—
+pastor_recommendation
+TEXT
+Min 50 chars
+Encrypted
+endorsements
+JSONB
+Array, min length 2
+Encrypted
+photo_url
+VARCHAR(500)
+S3 URL, JPEG/PNG only
+—
+father_name
+VARCHAR(200)
+—
+Encrypted
+status
+ENUM
+pending/approved/paused/deleted
+—
+years_in_church
+INTEGER
+1–80
+—
+created_at / updated_at
+TIMESTAMP
+Auto
+Audit fields
+
+4.4 Module: Profile Search &amp; AI Matching
+Epic: SRCH-01 — Pastor Search Portal
+
+Story ID
+User Story
+Priority
+Acceptance Criteria
+SRCH-01-01
+As a pastor, I want to search profiles by multiple filters simultaneously.
+Must Have
+Filters: state, seeking, age range, denomination. Results paginated (20/page)
+SRCH-01-02
+As a pastor, I want to see AI-ranked compatibility scores for matches.
+Must Have
+AI returns top 10 matches with % score and reason for each candidate
+SRCH-01-03
+As a pastor, I want to view the full profile detail in a secure modal.
+Must Have
+Modal shows all non-sensitive details; sensitive fields hidden until interest expressed
+SRCH-01-04
+As a pastor, I want to express interest in a profile on behalf of my candidate.
+Must Have
+Other pastor notified via email + in-app notification within 5 min
+SRCH-01-05
+As the AI engine, I want to rank matches based on compatibility criteria.
+Must Have
+Scoring: denomination (30%), age gap (20%), ministry depth (20%), endorsements (15%), location (15%)
+SRCH-01-06
+As a pastor, I want to filter out profiles that already have active allianc
